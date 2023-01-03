@@ -8,6 +8,6 @@ def main():
 
     day = input(", might you tell me what today is?  ")
 
-    print("\nHello,", name+"!  Happy", day + "!")
+    print("\nHello,", name+"!  Happy", day + "!\n")
 
 main()
