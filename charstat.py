@@ -30,7 +30,7 @@ def main():
     if repeat == "y":
         main()
     else:
-        print("Goodbye")
+        print("\nGoodbye")
 
 
 
