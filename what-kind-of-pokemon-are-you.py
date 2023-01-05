@@ -17,7 +17,7 @@ quiz={"Question 1":
     {"How do you do the things you do?": "Question",
         "The only way that number one should!": "Bulbasaur",
         "I like to be slick!": "Squirtle",
-        "Make one wrong mvoe and I will kick your grass": "Charmander",
+        "Make one wrong move and I will kick your grass": "Charmander",
         "Pika?": "Pikachu"}
     }
 
