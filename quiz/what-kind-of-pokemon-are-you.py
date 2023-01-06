@@ -74,10 +74,14 @@ def main():
             #asc = 'BADFILENAME.BLAH' #Uncomment this if you want to test error
 
             try:#We're going to try to open the ascii art file if it exist
+                with open(asc, "r") as f:
+                    print(f.read())
+                """
                 f = open(asc)#Open the file named whatever we saved to the asc variable
                 content = f.read()#Create a variable called content and save the file's contents to it
                 print(content)#Print out content
-
+                f.close()
+                """
             except Exception as err:
                 print("Sorry!  This file doesn't exist in your directory!", err)
 

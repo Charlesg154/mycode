@@ -1,0 +1,1 @@
+dns.example.com/nsonic.dns.example.com/nlookup.supershoes.example.com/n
