@@ -25,6 +25,12 @@ def main():
         else:
             print("No more bottles of beer on the wall!\nNo more bottles of beer!  You go to the store and buy some more...")
             main()
-
+"""
+def mistake():
+    print("I think you've had one too many.")
+    again=input("Call it a night? y/n\n>").lower()
+    if again != "n":
+        print("Let's get you home buddy..")
+"""
 
 main()
