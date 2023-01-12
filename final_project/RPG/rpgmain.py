@@ -75,8 +75,11 @@ def talk(text, spd=0, auto=False):#Parameters are string and speed we want it to
 
 """During talk functions, the player can chose to input information.  This could allow for certain tools and options"""
 def options(sel):
+    global LAYOUT
     if "SAVE" in sel: 
         save()
+    if sel == "MAP":
+        print(LAYOUT)#Testing this look
 
 
 """Quick-Time Event Function.  This allows us to give the player a set of choices
