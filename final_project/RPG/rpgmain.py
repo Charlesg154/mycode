@@ -26,12 +26,15 @@ from time import sleep #Sleep function required for various delays
 from threading import Timer #Timer function required for quick-time events
 import random #We're going to need this for the enemy to be able to randomly walk around.
 
+
+
 """GLOBAL VARIABLES"""
 HURRY=5 #We will use this variable for our quick time events.  It's read by multiple fuunctions simultaneously so we need it to be global
 LOC="04" #We will use this variable to annotate our current location
 MLOC="03" #Gonna make this the monster location
 VERBS = []
 INVENTORY = []
+
 
 
 """The Layout of the Map.  The player will later have view of this"""
@@ -80,7 +83,7 @@ ROOMS = {
             "Item"  : []},
         "06": {
             "South" : "09",
-            "Item"  : []},
+            "Item"  : ["Exit Key"]},
         "07": {
             "North" : "04",
             "South" : "10",
@@ -211,72 +214,107 @@ def qteresult(clock):
 
 
 
+"""Give user a list of actions and show their and threat's location"""
 def showStatus():
-    """determine the current status of the player"""
-    global LOC, VERBS, INVENTORY
-    # print the player's current location
+    global LOC, VERBS, INVENTORY#Declare global variables so we can edit these
+
     print('\n---------------------------')
-    print("   What's my next move?")
+    print("   What's my next move?")##We're going to output a neat banner here for the player to show a new phase
     print('---------------------------')
-    floor=LAYOUT.replace(LOC, "PL") #Replace the name of the room with text PL to indicate where they are on map
+    #Now we're going to output the current map status to the player
+    floor=LAYOUT.replace(LOC, "PL") #Replace the name of the room user is in with text "PL" to indicate where they are on map
     print(floor.replace(MLOC, "MO")) #Print map to user but also add the monster's location "MO"
     print("---------------------------")
 
-    monstermove()
+    #This is currently our game ending scenario.
+    if LOC=="14" and "Exit Key" in INVENTORY and "Exit Location" in INVENTORY:#If  the user has the key to the exit, found the exit, and in the door's location.
+        ending()#Trigger ending
+        return#Don't go any further in this function
 
-    undiscovered=[]
-    for i in ROOMS[LOC]["Item"]:
-        if i not in INVENTORY:
-            undiscovered.append(i)
+    monstermove()#This function will move the monster's location and also check for an encounter
+
+    undiscovered=[]#We'll use this list to check for any items we haven't found yet
+    for i in ROOMS[LOC]["Item"]:#Check the item key in this location to see if it has an associated item
+        if i not in INVENTORY:#Check if we have that item in our inventory yet
+            undiscovered.append(i)#If we do not, we're going to add it to the list of undiscovered items
 
     if undiscovered and random.randrange(0,10) < 7: #If there's an item in our undiscovered list and we randomly get a number less than 7 out of 10
-        talk('"...maybe there\'s something here."',.05)
-
-    if LOC=="14" and "Exit Key" in INVENTORY and "Exit Location" in INVENTORY:
-        ending()
-        return
+        talk('"...maybe there\'s something here."',.05) #Give the user a hint to search the area
 
     action=""
     while not action:
         action=input(f"Choose an action: {VERBS}\n>").upper()
-        if action.title() not in VERBS:
-            action = ""
-            print("Please select a different option")
+
+        #We're going to make some special checks for if the user does some shortcut commands to move around
+        direction = "" #We'll need this variable for later in the MOVE command
+        cardinal = ["NORTH", "SOUTH", "EAST", "WEST"] #list of directions
+        if " " in action: #Check action has a space
+            direction = action.split(" ", 1)#Split if it does.  Set direction to equal this value
+            for d in direction: #Check the new list
+                if d in cardinal: #If either of the words match a directional value
+                    action = d #Set the action variable to specifically equal this value
+        
+        if action in cardinal: #If the user entered a cardinal value, or if the above if statement turned the action into this value
+            direction = action.title() #Set the direction value equal to action.  This will allow us to keep track later where the user wanted to move.
+            action = "MOVE" #Now set action to move.  This will allow it to pass when we check if the action is in our approved VERBS list.
+
+        if action.title() not in VERBS: #We have our verbs in a title format.  Convert our action to that and see if it's in the list.
+            action = "" # If it's not in the list, reset action to null and restart the loop
+            print("Please select a different option") # Alert the user to make a new choice.
 
         elif action == "MOVE":
-            where=[]
-            for t in ROOMS[LOC]:
-                if t in ["North", "South","East","West"]:
-                    where.append(t)
-            dest=input(f"Move where? {where}\n>").title()
-            if dest in where:
-                LOC=ROOMS[LOC][dest]
-                showStatus()
-            else:
-                action=""
-                print("Please select a different option")
+            move(direction)
 
         elif action == "SEARCH":
-            talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)
-            if undiscovered:
-                item = random.choice(undiscovered)
-                talk('"This is ... "',.05)
-                talk(f'("I found this {item}!")',.01)
-                INVENTORY.append(item)
-
-                if item == "Lantern":
-                    talk('"I can see my way around with this..."',.05)
-                    VERBS.append("Move")#ALLOW USER TO MOVE
-
-                showStatus()
-
-            else:
-                talk('"Darn it....there\'s nothing..."', .05)
-                showStatus()
+            search(undiscovered)
+            return
 
         else:
             action=""
             print("Please select a different option")
+
+
+
+"""We'll define the MOVE action here.  This is an option in the showStatus function"""
+def move(direction):
+    global LOC
+    where=[] # Going to make a temporary list that we'll keep track of available directions
+    for t in ROOMS[LOC]: #Check value of key in the ROOMS dict that matches user's location
+        if t in ["North", "South","East","West"]:#Check if T is a cardinal direction
+            where.append(t)#Add T as a possible path by appending our temporary list
+    if direction in where: #If user entered a direction previously as a shortcut and it matches available paths
+        dest=direction #Set the destination to that path
+    else:#If the user hasn't already chosen a path or picked an incorrect one earlier
+        dest=input(f"Move where? {where}\n>").title() #Give input to allow them to chose from a list of possible paths
+    if dest in where: #Check the input and see if it matches our list of possibilities
+        LOC=ROOMS[LOC][dest]#Update user's location.  LOC should match Rooms key and dest should match value-key associated.
+        showStatus()#Restart the status with new location
+    else:
+        action=""#If user didn't provide a proper destination
+        print("Please select a different option")#Alert them and restart while loop
+
+
+
+"""We'll define the SEARCH action here.  This is an option in the showStatus function"""
+def search(undiscovered):
+    global INVENTORY
+    talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)
+    if undiscovered:
+        item = random.choice(undiscovered)
+        talk('"This is ... "',.05)
+        talk(f'("I found this {item}!")',.01)
+        INVENTORY.append(item)
+
+        if item == "Lantern":
+            talk('"I can see my way around with this..."',.05)
+            VERBS.append("Move")#ALLOW USER TO MOVE
+
+        showStatus()
+
+    else:
+        talk('"Darn it....there\'s nothing..."', .05)
+        showStatus()
+
 
 
 """Story Function.  This will ultimately be what guides the player through the story."""
@@ -329,13 +367,17 @@ def ending():
     print("YOU LIVED")
 
 
+
 """This will potentially be the save function"""
 def save():
     print("\n-GAME SAVED!\n")
 
+
+
 """Main function.  This will be the starting and guiding function for everything else."""
 def main():
     story()
+
 
 
 if __name__== "__main__": #If file is the one being ran
