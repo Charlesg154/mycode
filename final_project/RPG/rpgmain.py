@@ -17,9 +17,12 @@ PROJECT EXPECTATIONS:
 """
 """
 The purpose of the project is to present RPG concepts.  User will control a character and need to
-collect items and avoid game ending scenarios via clues presented.  One challenge I'd like to present
+collect items and avoid game ending scenarios via clues presented.  Besides the player choosing to
+move, there will also be a threat moving around the map as well.  We're going to present each
+entity's location on a map presented to the user.  One challenge I'd like to present
 is reading and writing save data for the user to start and end the game when desired without losing
-progress
+progress.  A heavy form of gameplay I'll be utilizing is Quick-Timed events, where users have
+a limited time to make a decision.
 """
 
 from time import sleep #Sleep function required for various delays
@@ -509,4 +512,5 @@ def main():
 
 if __name__== "__main__": #If file is the one being ran
     main() #Execute main function
+
 
