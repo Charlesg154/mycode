@@ -1,21 +1,6 @@
 #!/usr/bin/env python3
 
 """
-PROJECT EXPECTATIONS:
-
-    The program executes cleanly without error and meets its intended purpose.
-    The program has been designed to accommodate human errors.
-    The program is designed as efficiently as possible (do more with less!)
-    The program’s output is easy to read and is presented well (and free of spelling errors)
-    
-    Wherever possible, the program follows PEP 8 standards:
-        Keep code inside of functions
-        Indent consistently (4 spaces)
-        title/purpose of script at top of document
-        Comment your code well, and often!
-
-"""
-"""
 The purpose of the project is to present RPG concepts.  User will control a character and need to
 collect items and avoid game ending scenarios via clues presented.  Besides the player choosing to
 move, there will also be a threat moving around the map as well.  We're going to present each
