@@ -217,7 +217,6 @@ def showStatus():
     print('\n---------------------------')
     print(LAYOUT.replace(LOC, "PL")) #Replace the name of the room with text PL to indicate where they are on map
     print("---------------------------")
-    action=""
 
     undiscovered=[]
     for i in ROOMS[LOC]["Item"]:
@@ -231,11 +230,16 @@ def showStatus():
 
     if LOC=="14" and "Exit Key" in INVENTORY and "Exit Location" in INVENTORY:
         ending()
+        return
 
+    action=""
     while not action:
         action=input(f"Choose an action: {VERBS}\n>").upper()
+        if action.title() not in VERBS:
+            action = ""
+            print("Please select a different option")
 
-        if action == "MOVE":
+        elif action == "MOVE":
             where=[]
             for t in ROOMS[LOC]:
                 if t in ["North", "South","East","West"]:
@@ -248,12 +252,12 @@ def showStatus():
                 action=""
                 print("Please select a different option")
 
-        if action == "SEARCH":
+        elif action == "SEARCH":
             talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)
             if undiscovered:
                 item = random.choice(undiscovered)
                 talk('"This is ... "',.05)
-                talk(f'("I found this {item}")!',.01)
+                talk(f'("I found this {item}!")',.01)
                 INVENTORY.append(item)
 
                 if item == "Lantern":
@@ -289,7 +293,7 @@ def story():
     #ENCOUNTER
     talk("*pit..pat..pit..pat..pit..pat*", .15)
     talk('"Those sound like foot-steps, what should I do?...."')
-    result = qte(["SHOUT","HIDE"], 10)
+    result = qte(["SHOUT","HIDE"], 8)
     if result=="SHOUT":
         talk('"HELP!  PLEASE HELP ME!!!!!!"',.05)
         talk("...", .5)
