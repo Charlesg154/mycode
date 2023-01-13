@@ -216,14 +216,15 @@ def showStatus():
     global LOC, VERBS, INVENTORY
     # print the player's current location
     print('\n---------------------------')
+    print("   What's my next move?")
+    print('---------------------------')
     floor=LAYOUT.replace(LOC, "PL") #Replace the name of the room with text PL to indicate where they are on map
     print(floor.replace(MLOC, "MO")) #Print map to user but also add the monster's location "MO"
     print("---------------------------")
 
-    undiscovered=[]
-    if LOC == MLOC:
-            print("AHHHH REAL MONSTER")
+    monstermove()
 
+    undiscovered=[]
     for i in ROOMS[LOC]["Item"]:
         if i not in INVENTORY:
             undiscovered.append(i)
@@ -310,6 +311,14 @@ def story():
     #USER FREE TO EXPLORE
     VERBS.append("Search")#SET UP USER'S INITIAL POTENTIAL ACTIONS
     showStatus()#SEND THEM TO STATUS TO BE ABLE TO MAKE A MOVE
+
+
+
+"""This will determine what will happen when the user runs into the monster"""
+def monstermove():
+    global LOC, MLOC
+    if LOC == MLOC:
+        print("AHHHHH!  REAL MONSTER!")
 
 
 
