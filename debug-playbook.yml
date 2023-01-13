@@ -1,0 +1,27 @@
+---
+- name: How to output to the screen with debug
+  hosts: localhost
+  connection: local
+  gather_facts: no
+
+  vars:
+    vendorip: '192.168.22.55'
+
+  tasks:
+  - name: Print out to the screen
+    debug:
+      msg: "Welcome to Ansible"
+
+  - name: Print a message variable
+    debug:
+      msg: "The vendor IP is: {{ vendorip }}"
+
+  - name: Print just a variable
+    debug:
+      var: vendorip
+      #Note that recall within var parameter does not require mustache-brackets
+
+  - name: Print only with verbosity
+    ansible.builtin.debug:  #This is an example of a Fully Qualified Collection
+      var: vendorip
+      verbosity: 2 # require -vv at runtime for this task to display

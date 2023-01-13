@@ -1,0 +1,18 @@
+---
+- name: Query ISS api with Ansible
+  hosts: localhost
+  gather_facts: no #Set to true by default, runs the setup module
+
+  tasks:
+  - name: Print out to the screen
+    uri:
+      url: http://api.open-notify.org/iss-now.json
+    register: astrojson # the "register" keyword is not part of the uri module
+                              # just like the "become" keyword, this augments how a module executes
+                              # in this case, we want to save the response returned by this module
+                              # ALL modules in Ansible return data. Think of it as the "results" of how the
+                              # task ran.
+
+  - name: Display the contents of the variable astrojson
+    debug:
+      var: astrojson

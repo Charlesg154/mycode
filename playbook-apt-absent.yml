@@ -1,0 +1,12 @@
+---
+- name: Playbook - Un-Install figlet
+  hosts: planetexpress:!farnsworth # Remove farnsworth from list
+  connection: ssh # default is to use the connection plugin ssh.py
+  gather_facts: yes #default is yes
+
+  tasks:
+  - name: using apt to remove figlet
+    apt:
+      name: figlet
+      state: absent # This will REMOVE the application
+    become: yes

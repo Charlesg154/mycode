@@ -1,0 +1,12 @@
+---
+- name: Playbook - Install figlet # meta data
+  hosts: planetexpress:!farnsworth #we want to take the planetexpress group and remove farnsworth
+  connection: ssh # default is to use the connection plugin ssh.py
+  gather_facts: yes #default is yes
+  
+  tasks: #A list of what we want to do
+  - name: using apt to install figlet # metadata
+    apt:  #The module we want rto run, apt.py
+      name: figlet #parameter name has the value figlet
+      state: present  #parameter state has the value present
+    become: yes #elevate status to admin, sudo, enable, etc
