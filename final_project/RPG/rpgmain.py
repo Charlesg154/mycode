@@ -29,6 +29,7 @@ import random #We're going to need this for the enemy to be able to randomly wal
 """GLOBAL VARIABLES"""
 HURRY=5 #We will use this variable for our quick time events.  It's read by multiple fuunctions simultaneously so we need it to be global
 LOC="04" #We will use this variable to annotate our current location
+MLOC="03" #Gonna make this the monster location
 VERBS = []
 INVENTORY = []
 
@@ -215,14 +216,16 @@ def showStatus():
     global LOC, VERBS, INVENTORY
     # print the player's current location
     print('\n---------------------------')
-    print(LAYOUT.replace(LOC, "PL")) #Replace the name of the room with text PL to indicate where they are on map
+    floor=LAYOUT.replace(LOC, "PL") #Replace the name of the room with text PL to indicate where they are on map
+    print(floor.replace(MLOC, "MO")) #Print map to user but also add the monster's location "MO"
     print("---------------------------")
 
     undiscovered=[]
-    for i in ROOMS[LOC]["Item"]:
-        if i == "Monster":
+    if LOC == MLOC:
             print("AHHHH REAL MONSTER")
-        elif i not in INVENTORY:
+
+    for i in ROOMS[LOC]["Item"]:
+        if i not in INVENTORY:
             undiscovered.append(i)
 
     if undiscovered and random.randrange(0,10) < 7: #If there's an item in our undiscovered list and we randomly get a number less than 7 out of 10
@@ -244,7 +247,7 @@ def showStatus():
             for t in ROOMS[LOC]:
                 if t in ["North", "South","East","West"]:
                     where.append(t)
-            dest=input(f"Move where? {where}\n>").capitalize()
+            dest=input(f"Move where? {where}\n>").title()
             if dest in where:
                 LOC=ROOMS[LOC][dest]
                 showStatus()
