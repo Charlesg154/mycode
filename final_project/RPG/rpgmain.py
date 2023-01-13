@@ -24,7 +24,8 @@ progress
 
 from time import sleep #Sleep function required for various delays
 from threading import Timer #Timer function required for quick-time events
-import random #We're going to need this for the enemy to be able to randomly walk around.
+import random #We're going to need this for the enemy to be able to randomly walk around and other gaming aspects
+import csv #We'll need this for save files
 
 
 
@@ -32,10 +33,24 @@ import random #We're going to need this for the enemy to be able to randomly wal
 HURRY=5 #We will use this variable for our quick time events.  It's read by multiple fuunctions simultaneously so we need it to be global
 LOC="04" #We will use this variable to annotate our current location
 MLOC="03" #Gonna make this the monster location
-VERBS = []
-INVENTORY = []
+VERBS = [] #This will be a list of available options to the user each turn
+INVENTORY = [] #This will be the items the user has on hand
+#ASCII ART BELOW FOR GAME ENDERS
+YOUDIED="""
+ @@@ @@@  @@@@@@  @@@  @@@      @@@@@@@  @@@ @@@@@@@@ @@@@@@@ 
+ @@! !@@ @@!  @@@ @@!  @@@      @@!  @@@ @@! @@!      @@!  @@@
+  !@!@!  @!@  !@! @!@  !@!      @!@  !@! !!@ @!!!:!   @!@  !@!
+   !!:   !!:  !!! !!:  !!!      !!:  !!! !!: !!:      !!:  !!!
+   .:     : :. :   :.:: :       :: :  :  :   : :: ::: :: :  : 
+"""
 
-
+YOULIVED="""
+ @@@@@@@@  @@@@@@  @@@@@@@  @@@@@@  @@@@@@@  @@@@@@@@ @@@@@@@ 
+ @@!      !@@     !@@      @@!  @@@ @@!  @@@ @@!      @@!  @@@
+ @!!!:!    !@@!!  !@!      @!@!@!@! @!@@!@!  @!!!:!   @!@  !@!
+ !!:          !:! :!!      !!:  !!! !!:      !!:      !!:  !!!
+ : :: ::: ::.: :   :: :: :  :   : :  :       : :: ::: :: :  :
+"""
 
 """The Layout of the Map.  The player will later have view of this"""
 LAYOUT="""
@@ -153,11 +168,8 @@ Returns a value of a selected choice or expired timer.  DONE"""
 def qte(choices, clock): #Parameters are a list of choices and a time for our timer
     global HURRY#Allow editing of HURRY variable.  When this hits 0, the player is out of time.
 
-    talk(f"""
- What will you do?!
---------------------""", .08, True) #Let the user know they're about to have to make a choice
-    talk(f""" {choices}
---------------------""", .01, True) #Give the player their list of options.  Also automatically continue forward past the message.
+    talk(f"\n What will you do?!", .08, True) #Let the user know they're about to have to make a choice
+    talk(f"--------------------\n {choices}\n--------------------", .01, True) #Give the player their list of options.  Also automatically continue forward past the message.
 
     HURRY=3 #This value will countdown once the timer starts.  Later as it decreases, the player will be warned of the time left.
     t = Timer(clock/3, qteresult, args=[clock]) #Create the imported timer object.
@@ -218,6 +230,13 @@ def qteresult(clock):
 def showStatus():
     global LOC, VERBS, INVENTORY#Declare global variables so we can edit these
 
+    #This is currently our game ending scenario.
+    if LOC=="14" and "Exit Key" in INVENTORY and "Exit Location" in INVENTORY:#If  the user has the key to the exit, found the exit, and in the door's location.
+        ending()#Trigger ending
+        return#Don't go any further in this function
+
+    monstermove()#This function will move the monster's location and also check for an encounter
+
     print('\n---------------------------')
     print("   What's my next move?")##We're going to output a neat banner here for the player to show a new phase
     print('---------------------------')
@@ -225,13 +244,6 @@ def showStatus():
     floor=LAYOUT.replace(LOC, "PL") #Replace the name of the room user is in with text "PL" to indicate where they are on map
     print(floor.replace(MLOC, "MO")) #Print map to user but also add the monster's location "MO"
     print("---------------------------")
-
-    #This is currently our game ending scenario.
-    if LOC=="14" and "Exit Key" in INVENTORY and "Exit Location" in INVENTORY:#If  the user has the key to the exit, found the exit, and in the door's location.
-        ending()#Trigger ending
-        return#Don't go any further in this function
-
-    monstermove()#This function will move the monster's location and also check for an encounter
 
     undiscovered=[]#We'll use this list to check for any items we haven't found yet
     for i in ROOMS[LOC]["Item"]:#Check the item key in this location to see if it has an associated item
@@ -262,33 +274,97 @@ def showStatus():
             action = "" # If it's not in the list, reset action to null and restart the loop
             print("Please select a different option") # Alert the user to make a new choice.
 
-        elif action == "MOVE":
-            move(direction)
+        elif action == "MOVE":#If the user chose to move
+            move(direction, False)#Call the move function.  Pass the direction shortcut if you have it.
+                                #Second value of monster is false since this is the player calling move.
+        elif action == "SEARCH":#If the user chose to search
+            search(undiscovered) #Call the search function.  Pass on the undiscovered items in the area.
+            return#End the function here by returning null
 
-        elif action == "SEARCH":
-            search(undiscovered)
-            return
+        elif action == "SAVE":#If the user chose to save the game
+            save()#Run the save function
 
-        else:
-            action=""
-            print("Please select a different option")
+        else:#If the user did not type in a valid action
+            action=""#Reset action to null to continue the loop
+            print("Please select a different option")#Prompt the user to try again
+
+
+
+"""This will determine what will happen when the user runs into the monster"""
+def monstermove(whoops=False):
+    global LOC, MLOC
+    if not whoops:#If this triggered because the monster needs to move and not because the user walked into it
+        move("", True) #Use move function and set monster to true.  This will move the monster
+    if MLOC == LOC: #Check if new location matches the user's location
+        talk("*pit..pat..pit..*", .15)
+        talk("*pit..pat..pit..pat..pit..pat..pat..pit..pat..pit..pat*",0.01)
+        talk(" Fear Faces You",.1)
+        options=["RUN","BEG","STRUGGLE"]#List of [potential options you'll have to use against the monster]
+                                        #In expanding this, you can even make checks to see if certain options are available to add based on things the player has done.
+        while len(options) > 2: #Check if the list of options is greater than two
+            options.remove(random.choice(options)) #While there is, remove a random option from the list
+        result=qte(options, 7)
+        #Results of player choice
+        if result == "EXPIRED":
+            talk('"Before I knew what happened"',.1)
+            talk('"...It was all over..."',.1)
+            death()
+        elif result == "BEG":
+            talk('"Please!!!"',.03)
+            talk('"PLEASE I BEG YOU!  I -"', .03)
+            talk("...",1)
+            death()
+        elif result == "STRUGGLE":
+            talk("*YOU SCRAPE SCREAM AND PUSH LOOKING FOR ANY ESCAPE FROM THE TERRIFYING BEING BEFORE YOU*",.02)
+            talk('"No...no...no!!!!  NO!!!!"', .03)
+            if random.randrange(0,10) < 5: #If they get less than a 5 between 0-10
+                talk("...but escape was impossible...",.05)
+                death()
+            else:
+                talk("...You break free and hide from the unknown!",.05)
+                talk("...pit...pat...pit...",.1)
+
+        elif result == "RUN":
+            talk("*As footsteps approach you immediately push to another direction*", .03)
+            if random.randrange(0,10) < 3: #If they get less than a 3 between 0-10
+                talk("...but escape was impossible...",.05)
+                death()
+            else:
+                talk("*You manage to break away and hide from the entity!*",.05)
+                talk("...pit...pat...pit...",.1)
 
 
 
 """We'll define the MOVE action here.  This is an option in the showStatus function"""
-def move(direction):
-    global LOC
+def move(direction="", monster=False):
+    global LOC, MLOC
+    if monster: #If the monster is moving
+        l=MLOC  #Set location value to monster location
+    else: #If user is moving
+        l=LOC #Set location value to user location
+
     where=[] # Going to make a temporary list that we'll keep track of available directions
-    for t in ROOMS[LOC]: #Check value of key in the ROOMS dict that matches user's location
+    for t in ROOMS[l]: #Check value of key in the ROOMS dict that matches user's/monster's location
         if t in ["North", "South","East","West"]:#Check if T is a cardinal direction
             where.append(t)#Add T as a possible path by appending our temporary list
+
     if direction in where: #If user entered a direction previously as a shortcut and it matches available paths
         dest=direction #Set the destination to that path
+
     else:#If the user hasn't already chosen a path or picked an incorrect one earlier
-        dest=input(f"Move where? {where}\n>").title() #Give input to allow them to chose from a list of possible paths
+        if not monster:#If they're not the monster
+            dest=input(f"Move where? {where}\n>").title() #Give user input to allow them to chose from a list of possible paths
+        else:
+            dest=random.choice(where) #Randomly chose a destination if your a monster
+
     if dest in where: #Check the input and see if it matches our list of possibilities
-        LOC=ROOMS[LOC][dest]#Update user's location.  LOC should match Rooms key and dest should match value-key associated.
-        showStatus()#Restart the status with new location
+        if(monster):
+            MLOC=ROOMS[MLOC][dest]#Update monster's location.  LOC should match Rooms key and dest should match value-key associated.
+        else:
+            LOC=ROOMS[LOC][dest]#Update user's location.  LOC should match Rooms key and dest should match value-key associated.
+            if LOC==MLOC:
+                monstermove(True)#If the player walked into the monster....trigger an encounter
+            showStatus()#Restart the status with new location
     else:
         action=""#If user didn't provide a proper destination
         print("Please select a different option")#Alert them and restart while loop
@@ -297,23 +373,26 @@ def move(direction):
 
 """We'll define the SEARCH action here.  This is an option in the showStatus function"""
 def search(undiscovered):
-    global INVENTORY
-    talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)
-    if undiscovered:
-        item = random.choice(undiscovered)
-        talk('"This is ... "',.05)
-        talk(f'("I found this {item}!")',.01)
-        INVENTORY.append(item)
+    global INVENTORY #Declare user's inventory as a global variable
+    talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)#Show that the user is searching
 
+    if undiscovered:#Check to see if there is anything in the area undiscovered by the value we've passed to the function's parameter
+        item = random.choice(undiscovered)#In case there's multiple items here, pick one at random.
+        talk('"This is ... "',.05)
+        talk(f'("I found this {item}!")',.01)#Show the user what item they've found.
+        INVENTORY.append(item)#Add the item to the user's inventory
+
+        #Check for special items that'll cause for some kind of change
         if item == "Lantern":
             talk('"I can see my way around with this..."',.05)
-            VERBS.append("Move")#ALLOW USER TO MOVE
+            VERBS.append("Move")#Add movement to the user's potential actions
+            VERBS.sort()
 
-        showStatus()
+        showStatus()#End turn and return user to status menu
 
-    else:
-        talk('"Darn it....there\'s nothing..."', .05)
-        showStatus()
+    else:#If there is no item here that has yet to be discovered
+        talk('"Darn it....there\'s nothing..."', .05)#Prompt the user of failure
+        showStatus()#End turn and return user to status menu
 
 
 
@@ -343,40 +422,88 @@ def story():
         talk('"Help I\'m -"', .1)
         talk("*Before you can finish your words, what emerges from the darkness before you terrifies you for the few moments you\'ve let to view it*", .03)
         talk("*Farewell*",.1)
+        death()#Run death function and end game
         return
     talk("*There's too much you don't know.  You conceal yourself and let the footsteps fade away.*", .05)
     talk('"I\'ll look around and see what I can find out."',.08)
     #USER FREE TO EXPLORE
     VERBS.append("Search")#SET UP USER'S INITIAL POTENTIAL ACTIONS
+    #VERBS.append("Save")
     showStatus()#SEND THEM TO STATUS TO BE ABLE TO MAKE A MOVE
 
 
 
-"""This will determine what will happen when the user runs into the monster"""
-def monstermove():
-    global LOC, MLOC
-    if LOC == MLOC:
-        print("AHHHHH!  REAL MONSTER!")
+"""function for when the user dies."""
+def death():
+    talk(YOUDIED, .02)#Display ASCII art
+    exit()#Exit the script
 
 
 
 """Default story ending for now"""
 def ending():
-    talk("You make it out of that wretched place",.05)
-    talk("You look forward to the day this can all be seen as some weird twisted dream you've awoken from",.05)
-    print("YOU LIVED")
+    talk("*You have the key.  The door is in sight.  What seemed impossible is now before you.*",.08)
+    talk("*You can feel the tears fall down your face in relief.*",.05)
+    talk("*pit..pat..pit..pat..pit..pat*", .15)
+    talk('"No..no no!  I need to leave now!"',.03)
+    talk("*You rapidly approach the door, desperately fumbling with the key*",.05)
+    talk("*pit..pat..pit..pat..piT..PAT..PIT..PAT..PIT..PAT..PIT*",0.01)
+    talk("*C L I N K*",.15)
+    talk("*The key falls*",.05)
+    talk("What's your priority?",.05)
+    result=qte(["Hide", "Key"], 8)
+    if result in ["Expired","Key"]:
+        talk("*You desperately attempt to grab the key!  Freedom lies right th-*",.05)
+        talk('"It\'s not fair..."',.1)
+        death()
+    talk("*You hide...and hope...and for what seems like an eternity...*",.05)
+    talk("...pit...pat...pit...",.1)
+    talk("*It leaves...*",.05)
+    talk("*You don't know why and you don't ask questions.  You grab the key and bolt for the door!*",.05)
+    talk("*You make it out of that wretched place!  Your mind not thinking of anything as you continue to run.*",.05)
+    talk("*You look forward to the day this can all be seen as some weird twisted dream you've awoken from...*",.05)
+    talk(YOULIVED, .02)#Display ASCII art
+    exit()#Exit the script
 
 
-
-"""This will potentially be the save function"""
+#Note: For something this simple, I might not need to use CSV.  I could preface each line with a number and then strip the number from the left before saving the value
+"""THIS WILL WRITE SAVE DATA TO A NEW FILE"""
 def save():
-    print("\n-GAME SAVED!\n")
+    global LOC, MLOC, VERBS, INVENTORY
+    """with open("savefile.txt", "w") as save:
+        save.write("RPGSAVEFILE",LOC,MLOC,VERBS,INVENTORY)#Write save data values as list
+    talk("\n(-GAME SAVED!-)\n",.05)#Prompt the user that the game has been saved
+    with open("savefile.txt", "r") as save:
+        for x in save:
+            print(x)"""
+    #In progress
+
+
+
+"""THIS WILL LOAD SAVED DATA FROM A PREVIOUSLY WRITTEN FILE VIA CSV"""
+def load():
+    global LOC, MLOC, VERBS, INVENTORY
+    """try:
+        with open("savefile.txt", "r") as save:
+            for line in csv.reader(save):
+                if line[0] == "RPGSAVEFILE":
+                    LOC=line[1]
+                    MLOC=line[2]
+                    VERBS=line[3]
+                    INVENTORY=line[4]
+                    talk("\n(-GAME LOADED!-)\n",.05)#Prompt the user that the game has been loaded
+        with open("savefile.txt", "r") as save:
+            for x in save:
+                print(x)
+    except:
+        talk('(No save data located.)',.05)"""
+    #In progress
 
 
 
 """Main function.  This will be the starting and guiding function for everything else."""
 def main():
-    story()
+    story()#Immediately run the story function.
 
 
 
