@@ -497,5 +497,3 @@ def main():
 
 if __name__== "__main__": #If file is the one being ran
     main() #Execute main function
-
-
