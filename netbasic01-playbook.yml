@@ -1,0 +1,13 @@
+---
+- name: Another network playbook example
+
+  hosts: aristaswitchsecure
+
+  gather_facts: no
+
+  vars_files:
+    - vault.yml
+  tasks:
+  - name: Harvest Arista Facts
+    eos_facts:
+    when: ansible_network_os == 'eos'

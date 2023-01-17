@@ -1,0 +1,36 @@
+---
+- name: Building Precheck Failures
+  hosts: arista_switches        # group within the inventory to match on
+  connection: network_cli       # required when connecting to switch devices
+  become: yes
+  become_method: enable
+  gather_facts: yes             # this defines ansible_facts
+                                # (it runs *_facts on the target network switches)
+
+  vars:
+    ansible_ssh_pass: alta3
+
+  vars:
+    switch_image: "flash:/vEOS-lab.swi"
+    switch_image_version: "4.22.0F"
+
+  tasks:
+  # dig into the data we want to reveal
+  - name: Getting at network interfaces
+    debug:
+     var: ansible_facts
+     verbosity: 1
+
+  # build a precheck condition where the playbook will FAIL if a condition is not met
+  - name: "Precheck condition - Is switch running image {{ switch_image }}"
+    fail:
+      msg: "This switch does not appear to have the correct image loaded. Exiting..."
+    when: ansible_facts.net_image != switch_image
+
+
+  # build a precheck condition where the playbook will FAIL if a condition is not met
+  - name: "Precheck condition - Is switch running image version {{ switch_image_version }}"
+    fail:
+      msg: "This switch does not appear to have the correct version of the firmware loaded. Exiting..."
+    when: ansible_facts.net_version != switch_image_version
+

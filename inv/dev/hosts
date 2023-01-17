@@ -28,3 +28,12 @@ sw-2
 
 [eosswitches:vars]
 ansible_network_os=eos
+
+[arista_switches]
+sw-1
+sw-2
+
+[arista_switches:vars]
+ansible_user=admin
+ansible_network_os=eos
+

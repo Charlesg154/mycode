@@ -1,0 +1,16 @@
+---
+- name: Building Precheck Failures
+  hosts: arista_switches
+  connection: network_cli
+  become: yes
+  become_method: enable
+  gather_facts: yes
+
+  vars:
+    ansible_ssh_pass: alta3
+
+  tasks:
+
+  - name: getting at network interfaces
+    debug:
+      var: ansible_facts
