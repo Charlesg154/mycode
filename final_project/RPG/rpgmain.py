@@ -11,6 +11,10 @@ User will have a map presented to them that will update based on changed locatio
 User will be able to collect items that are available in traveled rooms
 User will be able to save and load data.
 
+TO DO:
+INVENTORY DESCRIPTIONS-
+STREAMLINE LOADING BY CHECKING IF VARIABLE NAME MATCHES LINE NAME, STRIPPING THAT FROM THE LINE AND LEAVING ONLY THE VALUE
+
 -CHARLES GREEN JR. | TLG NDE COHORT
 """
 
@@ -125,6 +129,14 @@ ROOMS = {
         "14": {
             "North" : "13",
             "Item" : ["Exit Location"]}
+        }
+
+
+"""LIST OF POTENTIAL ITEMS IN THE WORLD.  DEFINE THEM HERE.  PLACE THEIR LOCATIONS IN THE ROOMS VARIABLE ABOVE."""
+ITEM_LIST = {
+        "Lantern" : "I can MOVE around as long as I have this with me...",  #ITEM NAME (MATCHING WHAT'S AVAILABLE IN ROOMS) : ITEM DESCRIPTION
+        "Exit Key" : "As long as I find the EXIT LOCATION, this should be able to get me out...",
+        "Exit Location" : "I found where to leave....with an EXIT KEY I should be able to escape here..."
         }
 
 
@@ -260,29 +272,39 @@ def showStatus(restart=False): #Restart parameter is for when this function is b
     while not action:#While action variable is empty (User hasn't chosen to do something properly yet)
         action=input(f"Choose an action: {VERBS}\n>").upper()#Prompt user for input.  Show them the list of available actions from Global variables VERBS
 
-        #We're going to make some special checks for if the user does some shortcut commands to move around
-        direction = "" #We'll need this variable for later in the MOVE command
+        #We're going to make some special checks for if the user does some shortcut commands to move around or check items
+        shortcut = "" #We'll need this variable for later in the MOVE and INVENTORY functions
         cardinal = ["NORTH", "SOUTH", "EAST", "WEST"] #list of directions
-        if " " in action: #Check action has a space
-            direction = action.split(" ", 1)#Split if it does.  Set direction to equal this value
-            for d in direction: #Check the new list
+        if " " in action: #Check action has a space so we know there's two words
+            shortcut = action.split(" ", 1)#Split if it does.  Set shortcut to equal this list
+            for d in shortcut: #Check the new list
                 if d in cardinal: #If either of the words match a directional value
                     action = d #Set the action variable to specifically equal this value
+                if d.title() in INVENTORY:#If either of the words match an item in your inventory
+                    action = d.title() #Set the action variable specifically to this
     
         options(action)#This is just for some debug options.  Won't advance anything but will check for keywords to give specific outputs
                         #I'll also use this to check for input indicating user wants to quit.  That way they can do it mid-story or on the status screen
 
         if action in cardinal: #If the user entered a cardinal value, or if the above if statement turned the action variable into this value [North, South, East West]
-            direction = action.title() #Set the direction value equal to action (which should be North, South, East, or West).  This will allow us to keep track later where the user wanted to move.
+            shortcut = action.title() #Set the shortcut value equal to action (which should be North, South, East, or West).  This will allow us to keep track later where the user wanted to move.
             action = "MOVE" #Now set action to move.  This will allow it to pass when we check if the action is in our approved VERBS list.
+
+        if action.title() in INVENTORY: #If the user typed the name of an item in the inventory value, or our above if statement forced the action variable to be the name of one
+            shortcut = action.title()#Set the shortcut value equal to the action (which is the name of an item)
+            action = "INVENTORY"#Set our action value to inventory.  This will allow it to pass when we check if the action is in our approved VERBS list
 
         if action.title() not in VERBS: #We have our verbs in a title format.  Convert our action to that and see if it's in the list.
             action = "" # If it's not in the list, reset action to null and restart the loop
             print("Please select a different option") # Alert the user to make a new choice.
 
         elif action == "MOVE":#If the user chose to move
-            move(direction, False)#Call the move function.  Pass the direction shortcut if you have it.
+            move(shortcut, False)#Call the move function.  Pass the direction shortcut if you have it.
                                 #Second value of monster is false since this is the player calling move.
+
+        elif action == "INVENTORY":#If the user chose the inventory option
+            inventory_check(shortcut)#Call the inventory_check function.  Pass the item shortcut if we have it.
+
         elif action == "SEARCH":#If the user chose to search
             search(undiscovered) #Call the search function.  Pass on the undiscovered items in the area.
 
@@ -386,6 +408,21 @@ def move(direction="", monster=False):
 
 
 
+def inventory_check(item):
+    choice=""
+    if item and item in INVENTORY: #If item isn't null and is an item in our inventory
+        choice=item #Set our choice to this item
+    else: #If there isn't an item already chosen as a shortcut
+        choice=input(f"Which item would you like to investigate? {INVENTORY}\n>").title()#Have the user choose what item they'd like to investigate
+
+    if choice in INVENTORY:#One last check make sure the choice is valid
+        talk(f"{choice}: {ITEM_LIST[choice]}",.03)#Output the choice as well as the associated description from the ITEM_LIST dictionary which should match names
+    else:
+        talk(f"{choice}... I don't think that's something I have on me.",.05)#Output failed choice
+
+    showStatus(True)#Restart the showStatus function without starting a new round
+
+
 """We'll define the SEARCH action here.  This is an option in the showStatus function.  DONE"""
 def search(undiscovered):#Pass with a parameter of undiscovered items in this location
     talk('*Ruffling* "There\'s gotta be something here that can help me..."', .05)#Show that the user is searching
@@ -402,6 +439,9 @@ def search(undiscovered):#Pass with a parameter of undiscovered items in this lo
             talk('"I can see my way around with this..."',.05)
             VERBS.append("Move")#Add movement to the user's potential actions
             VERBS.sort()
+
+        if len(INVENTORY) and "Inventory" not in VERBS:#Check if the inventory is greater than zero and if the player is able to use the Check Inventory action.
+            VERBS.append("Inventory")#Add the Inventory option since they an item now.
 
         showStatus()#End turn and return user to status menu
 
@@ -498,7 +538,7 @@ def savecheck():
                 print("--------------------\n SAVE FILE DETECTED\n--------------------")#State that we've detected a valid save file
                 inp=input("Would you like to load this save data?  y/n\n>").upper()#Ask user if they'd like to load data
 
-                if inp in ["Y","YES","LOAD"]:#If they answer yes
+                if inp in ["Y","YES","LOAD", "L"]:#If they answer yes
                     return "LOAD"#Return LOAD to load data
 
                 else: #If they answer anything other than yes to loading their save data...
