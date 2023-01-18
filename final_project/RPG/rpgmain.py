@@ -407,6 +407,7 @@ def move(direction="", monster=False):
 
 
 
+"""This function will be called when the user wants to check their inventory for collected items"""
 def inventory_check(item):
     choice=""
     if item and item in INVENTORY: #If item isn't null and is an item in our inventory
@@ -420,6 +421,7 @@ def inventory_check(item):
         talk(f"{choice}... I don't think that's something I have on me.",.05)#Output failed choice
 
     showStatus(True)#Restart the showStatus function without starting a new round
+
 
 
 """We'll define the SEARCH action here.  This is an option in the showStatus function.  DONE"""
