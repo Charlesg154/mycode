@@ -11,9 +11,8 @@ User will have a map presented to them that will update based on changed locatio
 User will be able to collect items that are available in traveled rooms
 User will be able to save and load data.
 
-TO DO:
-INVENTORY DESCRIPTIONS-
-STREAMLINE LOADING BY CHECKING IF VARIABLE NAME MATCHES LINE NAME, STRIPPING THAT FROM THE LINE AND LEAVING ONLY THE VALUE
+Interesting things to expand on:
+Potentially encrypting and decrypting saved data
 
 -CHARLES GREEN JR. | TLG NDE COHORT
 """
